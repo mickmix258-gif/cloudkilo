@@ -328,6 +328,7 @@ const Settings: Component<SettingsProps> = (props) => {
     setActive(tab)
     props.onTabChange?.(tab)
     vscode.postMessage({ type: "settingsTabChanged", tab })
+    vscode.postMessage({ type: "navigate", view: "settings", tab })
   }
 
   const searchTabs = createMemo<SettingsTab[]>(() =>

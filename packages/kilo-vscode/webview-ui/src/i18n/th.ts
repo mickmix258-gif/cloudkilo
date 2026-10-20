@@ -726,6 +726,7 @@ export const dict = {
   "profile.usage.status.unlimited": "ไม่จำกัด",
   "profile.usage.status.notInPlan": "ไม่รวมอยู่ในแผน",
   "profile.usage.status.exhausted": "ใช้หมดแล้ว",
+  "profile.action.back": "ย้อนกลับ",
   "profile.action.dashboard": "แดชบอร์ด",
   "profile.action.topUp": "เติมเงิน",
   "profile.pass.subscribe": "รับ Kilo Pass เพื่อเพิ่มเครดิตและรับโบนัส",

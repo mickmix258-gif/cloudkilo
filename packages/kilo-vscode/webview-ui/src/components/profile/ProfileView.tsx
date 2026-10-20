@@ -99,6 +99,10 @@ const ProfileView: Component<ProfileViewProps> = (props) => {
     vscode.postMessage({ type: "refreshProfile" })
   }
 
+  const handleBack = () => {
+    vscode.postMessage({ type: "navigate", view: "newTask" })
+  }
+
   const handleDashboard = () => {
     vscode.postMessage({ type: "openExternal", url: "https://app.kilo.ai/profile" })
   }
@@ -147,6 +151,7 @@ const ProfileView: Component<ProfileViewProps> = (props) => {
           gap: "8px",
         }}
       >
+        <Button variant="ghost" size="small" icon="arrow-left" onClick={handleBack} />
         <h2 style={{ "font-size": "var(--kilo-font-size-16)", "font-weight": "600", margin: 0 }}>
           {language.t("profile.title")}
         </h2>

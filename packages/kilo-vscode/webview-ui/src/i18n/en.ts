@@ -643,6 +643,7 @@ export const dict = {
   "profile.usage.status.unlimited": "Unlimited",
   "profile.usage.status.notInPlan": "Not in plan",
   "profile.usage.status.exhausted": "Exhausted",
+  "profile.action.back": "Back",
   "profile.action.dashboard": "Dashboard",
   "profile.action.topUp": "Top up",
   "profile.pass.subscribe": "Get Kilo Pass to add credits and earn bonuses",
