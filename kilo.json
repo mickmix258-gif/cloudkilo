@@ -1,6 +1,7 @@
 {
   "$schema": "https://app.kilo.ai/config.json",
   "snapshot": false,
+  "model": "kilo-auto/free",
   "models": {
     "catalog_path": ".kilo/models-catalog.json",
     "default": "kilo-auto/free",

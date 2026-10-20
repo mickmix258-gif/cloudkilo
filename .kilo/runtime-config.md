@@ -30,6 +30,7 @@
 {
   "$schema": "https://app.kilo.ai/config.json",
   "snapshot": false,
+  "model": "kilo-auto/free",
   "models": {
     "catalog_path": ".kilo/models-catalog.json",
     "default": "kilo-auto/free",
@@ -63,11 +64,11 @@
 }
 ```
 
-จุดสำคัญ:
-- `models.default` = `"kilo-auto/free"` — โมเดลเริ่มต้นที่ใช้เมื่อไม่มีการระบุ
-- `models.free_tier` = `"kilo-auto/free"` — โมเดลสำหรับ tier ฟรี
-- `gateway.url` = `"https://api.kilo.ai/api/gateway"` — เกตเวย์กลางของ Kilo
-- `gateway.auto_select` = `true` — เลือก provider อัตโนมัติ
+หมายเหตุเกี่ยวกับ schema validation:
+- `model` (top-level) — โมเดลเริ่มต้นที่ใช้เมื่อไม่มีการระบุผ่าน CLI argument อ่านโดย `cli-chat.ts` ผ่าน `getDefaultModel()`
+- `models` — รายละเอียดโมเดล: catalog path, default, free_tier, routing, free_models, available_now
+- `gateway` — การตั้งค่าเกตเวย์: URL และ auto_select
+- ถ้า schema validator แจ้ง "Unrecognized keys: models, gateway" ให้ละเว้นได้ เนื่องจาก `cli-chat.ts` อ่านค่าเหล่านี้โดยตรงจากไฟล์ ไม่ผ่าน schema validation
 
 ---
 
@@ -144,8 +145,9 @@ OPENROUTER_API_KEY=sk-or-v1-your-openrouter-key
 | ทดสอบ CLI ด้วย free model | ✅ | ผ่าน — kilo-auto/free ตอบกลับเป็นภาษาไทย |
 | รวม config / catalog / CLI ให้อยู่ในที่เดียว | ✅ | เอกสารนี้ |
 | ค่า default (free model + gateway) ใช้งานได้ทันที | ✅ | kilo.json กำหนด default และ gateway แล้ว |
-| แก้ไขการนำทางลิงก์การตั้งค่า autocomplete (Issue #6284) | ⏳ | รอทำในรอบถัดไป |
-| เพิ่ม back button ให้ ProfileView.tsx | ⏳ | รอทำในรอบถัดไป |
+| แก้ไขการนำทางลิงก์การตั้งค่า autocomplete (Issue #6284) | ✅ | Settings.tsx onTabChange ส่ง navigate message view: "settings" |
+| เพิ่ม back button ให้ ProfileView.tsx | ✅ | handleBack() post navigate/view: "newTask" + ปุ่ม arrow-left ใน header |
+| ตรวจว่าไม่มี secret หลุดในโค้ด | ✅ | cli-chat.ts, kilo.json, models-catalog.json ไม่มี hard-code secret |
 
 ---
 
