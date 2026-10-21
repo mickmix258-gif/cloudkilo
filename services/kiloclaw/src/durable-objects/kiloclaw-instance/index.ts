@@ -1080,6 +1080,8 @@ export class KiloClawInstance extends DurableObject<KiloClawEnv> {
     kilocodeApiKey?: string | null;
     kilocodeApiKeyExpiresAt?: string | null;
     kilocodeDefaultModel?: string | null;
+    devinaiApiKey?: string | null;
+    devinaiBaseUrl?: string | null;
     vectorMemoryEnabled?: boolean;
     vectorMemoryModel?: string | null;
     dreamingEnabled?: boolean;
@@ -1087,6 +1089,8 @@ export class KiloClawInstance extends DurableObject<KiloClawEnv> {
     kilocodeApiKey: string | null;
     kilocodeApiKeyExpiresAt: string | null;
     kilocodeDefaultModel: string | null;
+    devinaiApiKey: string | null;
+    devinaiBaseUrl: string | null;
     vectorMemoryEnabled: boolean;
     vectorMemoryModel: string | null;
     dreamingEnabled: boolean;
@@ -1106,6 +1110,14 @@ export class KiloClawInstance extends DurableObject<KiloClawEnv> {
     if (patch.kilocodeDefaultModel !== undefined) {
       this.s.kilocodeDefaultModel = patch.kilocodeDefaultModel;
       pending.kilocodeDefaultModel = this.s.kilocodeDefaultModel;
+    }
+    if (patch.devinaiApiKey !== undefined) {
+      this.s.devinaiApiKey = patch.devinaiApiKey;
+      pending.devinaiApiKey = this.s.devinaiApiKey;
+    }
+    if (patch.devinaiBaseUrl !== undefined) {
+      this.s.devinaiBaseUrl = patch.devinaiBaseUrl;
+      pending.devinaiBaseUrl = this.s.devinaiBaseUrl;
     }
     if (patch.vectorMemoryEnabled !== undefined) {
       this.s.vectorMemoryEnabled = patch.vectorMemoryEnabled;

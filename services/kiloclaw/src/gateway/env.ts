@@ -83,6 +83,7 @@ export type EnvVarsBuild = {
  */
 const SENSITIVE_KEYS = new Set([
   'KILOCODE_API_KEY',
+  'DEVINAI_API_KEY',
   'OPENCLAW_GATEWAY_TOKEN',
   ...ALL_SECRET_ENV_VARS,
   ...INTERNAL_SENSITIVE_ENV_VARS,
@@ -177,8 +178,14 @@ export async function buildEnvVars(
     if (userConfig.kilocodeApiKey) {
       sensitive.KILOCODE_API_KEY = userConfig.kilocodeApiKey;
     }
+    if (userConfig.devinaiApiKey) {
+      sensitive.DEVINAI_API_KEY = userConfig.devinaiApiKey;
+    }
     if (userConfig.kilocodeDefaultModel) {
       plainEnv.KILOCODE_DEFAULT_MODEL = userConfig.kilocodeDefaultModel;
+    }
+    if (userConfig.devinaiBaseUrl) {
+      plainEnv.DEVINAI_BASE_URL = userConfig.devinaiBaseUrl;
     }
     if (userConfig.userTimezone) {
       plainEnv.KILOCLAW_USER_TIMEZONE = userConfig.userTimezone;

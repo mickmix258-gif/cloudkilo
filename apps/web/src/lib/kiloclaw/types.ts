@@ -32,6 +32,8 @@ export type ProvisionInput = {
   kilocodeApiKey?: string;
   kilocodeApiKeyExpiresAt?: string;
   kilocodeDefaultModel?: string;
+  devinaiApiKey?: string;
+  devinaiBaseUrl?: string;
   userTimezone?: string | null;
   userLocation?: string | null;
   pinnedImageTag?: string;
@@ -42,6 +44,8 @@ export type KiloCodeConfigPatchInput = {
   kilocodeApiKey?: string | null;
   kilocodeApiKeyExpiresAt?: string | null;
   kilocodeDefaultModel?: string | null;
+  devinaiApiKey?: string | null;
+  devinaiBaseUrl?: string | null;
   vectorMemoryEnabled?: boolean;
   vectorMemoryModel?: string | null;
   dreamingEnabled?: boolean;
@@ -51,6 +55,8 @@ export type KiloCodeConfigResponse = {
   kilocodeApiKey: string | null;
   kilocodeApiKeyExpiresAt: string | null;
   kilocodeDefaultModel: string | null;
+  devinaiApiKey: string | null;
+  devinaiBaseUrl: string | null;
   vectorMemoryEnabled: boolean;
   vectorMemoryModel: string | null;
   dreamingEnabled: boolean;

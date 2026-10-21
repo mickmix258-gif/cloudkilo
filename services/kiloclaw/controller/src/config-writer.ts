@@ -670,6 +670,32 @@ export function generateBaseConfig(
     delete config.models.providers.kilocode.headers?.['X-KiloCode-OrganizationId'];
   }
 
+  // Devin AI provider entry (OpenAI-compatible).
+  // Activated when the user has configured a devinai API key. The base URL
+  // defaults to Devin AI's public API endpoint; override via DEVINAI_BASE_URL.
+  // Auth comes from DEVINAI_API_KEY env var (set in sensitive bucket by
+  // buildEnvVars when user configures devinaiApiKey).
+  if (env.DEVINAI_API_KEY) {
+    config.models.providers = config.models.providers ?? {};
+    config.models.providers.devinai = config.models.providers.devinai ?? {};
+    config.models.providers.devinai.baseUrl =
+      env.DEVINAI_BASE_URL ?? 'https://app.devinai.ai/api/';
+    config.models.providers.devinai.api = config.models.providers.devinai.api ?? 'openai-completions';
+    config.models.providers.devinai.models = [];
+    delete config.models.providers.devinai.apiKey;
+
+    // Pass org scope to Devin AI provider as request header when available.
+    if (env.KILOCODE_ORGANIZATION_ID) {
+      config.models.providers.devinai.headers = config.models.providers.devinai.headers ?? {};
+      config.models.providers.devinai.headers['X-KiloCode-OrganizationId'] =
+        env.KILOCODE_ORGANIZATION_ID;
+    } else {
+      delete config.models.providers.devinai.headers?.['X-KiloCode-OrganizationId'];
+    }
+  } else {
+    delete config.models.providers?.devinai;
+  }
+
   // User-selected default model override.
   if (env.KILOCODE_DEFAULT_MODEL) {
     config.agents = config.agents ?? {};

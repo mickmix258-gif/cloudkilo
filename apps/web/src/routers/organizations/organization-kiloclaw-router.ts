@@ -311,6 +311,8 @@ type KiloCodeConfigPublicResponse = Pick<
   KiloCodeConfigResponse,
   | 'kilocodeApiKeyExpiresAt'
   | 'kilocodeDefaultModel'
+  | 'devinaiApiKey'
+  | 'devinaiBaseUrl'
   | 'vectorMemoryEnabled'
   | 'vectorMemoryModel'
   | 'dreamingEnabled'
@@ -322,6 +324,8 @@ function sanitizeKiloCodeConfigResponse(
   return {
     kilocodeApiKeyExpiresAt: response.kilocodeApiKeyExpiresAt,
     kilocodeDefaultModel: response.kilocodeDefaultModel,
+    devinaiApiKey: response.devinaiApiKey,
+    devinaiBaseUrl: response.devinaiBaseUrl,
     vectorMemoryEnabled: response.vectorMemoryEnabled,
     vectorMemoryModel: response.vectorMemoryModel,
     dreamingEnabled: response.dreamingEnabled,

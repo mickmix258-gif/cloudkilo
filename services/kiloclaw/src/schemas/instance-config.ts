@@ -148,6 +148,8 @@ export const InstanceConfigSchema = z.object({
   kilocodeApiKey: z.string().nullable().optional(),
   kilocodeApiKeyExpiresAt: z.string().nullable().optional(),
   kilocodeDefaultModel: z.string().nullable().optional(),
+  devinaiApiKey: z.string().nullable().optional(),
+  devinaiBaseUrl: z.string().nullable().optional(),
   userTimezone: UserTimezoneSchema.nullable().optional(),
   userLocation: UserLocationSchema.nullable().optional(),
   webSearch: z
@@ -293,6 +295,8 @@ export const PersistedStateSchema = z.object({
   kilocodeApiKey: z.string().nullable().default(null),
   kilocodeApiKeyExpiresAt: z.string().nullable().default(null),
   kilocodeDefaultModel: z.string().nullable().default(null),
+  devinaiApiKey: z.string().nullable().default(null),
+  devinaiBaseUrl: z.string().nullable().default(null),
   userTimezone: UserTimezoneSchema.nullable().default(null),
   userLocation: UserLocationSchema.nullable().default(null),
   kiloExaSearchMode: KiloExaSearchModeSchema.nullable().default(null),

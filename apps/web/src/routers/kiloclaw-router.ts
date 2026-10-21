@@ -942,6 +942,8 @@ const updateConfigSchema = z.object({
 
 const updateKiloCodeConfigSchema = z.object({
   kilocodeDefaultModel: kilocodeDefaultModelSchema.nullable().optional(),
+  devinaiApiKey: z.string().nullable().optional(),
+  devinaiBaseUrl: z.string().nullable().optional(),
   vectorMemoryEnabled: z.boolean().optional(),
   vectorMemoryModel: z.string().nullable().optional(),
   dreamingEnabled: z.boolean().optional(),
@@ -1005,6 +1007,8 @@ type KiloCodeConfigPublicResponse = Pick<
   KiloCodeConfigResponse,
   | 'kilocodeApiKeyExpiresAt'
   | 'kilocodeDefaultModel'
+  | 'devinaiApiKey'
+  | 'devinaiBaseUrl'
   | 'vectorMemoryEnabled'
   | 'vectorMemoryModel'
   | 'dreamingEnabled'
@@ -1177,6 +1181,8 @@ function sanitizeKiloCodeConfigResponse(
   return {
     kilocodeApiKeyExpiresAt: response.kilocodeApiKeyExpiresAt,
     kilocodeDefaultModel: response.kilocodeDefaultModel,
+    devinaiApiKey: response.devinaiApiKey,
+    devinaiBaseUrl: response.devinaiBaseUrl,
     vectorMemoryEnabled: response.vectorMemoryEnabled,
     vectorMemoryModel: response.vectorMemoryModel,
     dreamingEnabled: response.dreamingEnabled,

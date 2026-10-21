@@ -119,6 +119,8 @@ const KiloCodeConfigPatchSchema = z.object({
     )
     .nullable()
     .optional(),
+  devinaiApiKey: z.string().nullable().optional(),
+  devinaiBaseUrl: z.string().nullable().optional(),
   vectorMemoryEnabled: z.boolean().optional(),
   vectorMemoryModel: z.string().nullable().optional(),
   dreamingEnabled: z.boolean().optional(),
@@ -2092,6 +2094,8 @@ platform.patch('/kilocode-config', async c => {
     kilocodeApiKey,
     kilocodeApiKeyExpiresAt,
     kilocodeDefaultModel,
+    devinaiApiKey,
+    devinaiBaseUrl,
     vectorMemoryEnabled,
     vectorMemoryModel,
     dreamingEnabled,
@@ -2107,6 +2111,8 @@ platform.patch('/kilocode-config', async c => {
           kilocodeApiKey,
           kilocodeApiKeyExpiresAt,
           kilocodeDefaultModel,
+          devinaiApiKey,
+          devinaiBaseUrl,
           vectorMemoryEnabled,
           vectorMemoryModel,
           dreamingEnabled,
