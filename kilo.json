@@ -55,7 +55,7 @@
     }
   },
   "gateway": {
-    "url": "https://api.kilo.ai/api/gateway",
+    "url": "https://ai-gateway.kilo.ai/api/v1",
     "auto_select": true
   }
 }

@@ -8,6 +8,8 @@ packages:
   - services/deploy-infra/builder
   - services/deploy-infra/dispatcher
   - packages/*
+  # Imported upstream extension snapshot; keep excluded until its workspace dependencies are vendored.
+  - '!packages/kilo-vscode'
 
 catalog:
   '@cloudflare/vitest-pool-workers': 0.16.13

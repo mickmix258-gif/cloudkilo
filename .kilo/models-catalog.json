@@ -4,7 +4,7 @@
   "generated_at_utc": "2026-08-08T15:04:40.667410Z",
   "source": {
     "type": "official_runtime_catalog",
-    "url": "https://api.kilo.ai/api/gateway/models",
+    "url": "https://ai-gateway.kilo.ai/api/v1/models",
     "documentation": "https://kilo.ai/docs/gateway/models-and-providers",
     "repository": "https://github.com/Kilo-Org/kilocode",
     "plugin_archive": "kilo.jetbrains-7.0.14.zip",
@@ -174,5 +174,12 @@
       "kilo-auto/efficient",
       "kilo-auto/free"
     ]
+  },
+  "catalog_status": {
+    "kind": "historical_snapshot",
+    "generated_at_utc": "2026-08-08T15:04:40.667410Z",
+    "contains_full_model_records": false,
+    "refresh_required": true,
+    "note": "catalog_summary records aggregate counts (349 models across 60 providers) and this file stores curated routing/availability IDs; it does not include all 349 individual model records. Refresh from the live /models endpoint before relying on current model availability or pricing."
   }
 }

@@ -1,158 +1,122 @@
-# Kilo AI Runtime — คอนฟิกและคาตาล็อกรวมศูนย์
+# Kilo AI Runtime — สถานะคอนฟิกและวิธีใช้งาน
 
-เอกสารนี้รวมคอนฟิก คาตาล็อกรันไทม์ และสクリปต์ CLI ที่เกี่ยวข้องกับโมเดลเริ่มต้น (free model) และเกตเวย์ของ Kilo AI ไว้ในที่เดียว
+อัปเดตเอกสาร: 1 พฤศจิกายน 2026
 
----
+เอกสารนี้อธิบายเฉพาะส่วน Kilo AI Runtime และ CLI Chat ที่อยู่ใน Repository `cloudkilo` ไม่ใช่การรับรองว่า Kilo Code VS Code Extension ทั้งชุดพร้อมใช้งานแล้ว
 
-## 1. ภาพรวม
+## 1. สรุปสถานะปัจจุบัน
 
-ระบบ Kilo AI Runtime ใช้ค่าเริ่มต้นเป็นโมเดลฟรี (`kilo-auto/free`) ผ่านเกตเวย์ Kilo (`https://api.kilo.ai/api/gateway`) โดยไม่ต้องตั้งค่า API key หรือคอนฟิกเพิ่มเติม ก่อนใช้งานจริง
+- โมเดลเริ่มต้น: `kilo-auto/free`
+- Gateway base URL: `https://ai-gateway.kilo.ai/api/v1`
+- CLI command: `pnpm chat:cli`
+- Authentication: ใช้ `KILO_API_KEY` จาก environment สำหรับโมเดลที่ต้องยืนยันตัวตน
+- Anonymous access: ใช้ได้เฉพาะโมเดลที่ Gateway อนุญาตให้ใช้ฟรี และมี rate limit
+- Model catalog: เป็น historical snapshot ที่สร้างเมื่อ `2026-08-08T15:04:40.667410Z` ไม่ใช่รายการสด
+- VS Code Extension source: เก็บไว้ใน `packages/kilo-vscode/` แต่ถูก exclude จาก pnpm workspace ชั่วคราว เพราะ dependency graph จาก upstream ยังไม่ครบ
 
-ค่าเริ่มต้นนี้ใช้งานได้ทันที หลังจากนำไฟล์คอนฟิกทั้งหมดไปวางในตำแหน่งที่ถูกต้องแล้ว
+## 2. ไฟล์หลัก
 
----
+| ไฟล์ | หน้าที่ |
+|---|---|
+| `kilo.json` | กำหนดโมเดลเริ่มต้นและ Gateway URL |
+| `.kilo/models-catalog.json` | สรุปจำนวน Provider, routing และรายการโมเดลที่คัดเลือกไว้ |
+| `.kilo/runtime-config.md` | เอกสาร Runtime ฉบับนี้ |
+| `dev/local/cli-chat.ts` | วงจรรับคำสั่งจาก Terminal |
+| `dev/local/cli-chat-core.ts` | ฟังก์ชันเลือกโมเดล, สร้าง Header และเรียก Gateway |
+| `dev/local/cli-chat.test.ts` | Unit tests สำหรับ CLI core |
+| `package.json` | คำสั่ง `chat:cli` และ `catalog:refresh` |
+| `packages/kilo-vscode/` | Source snapshot ของ VS Code Extension ซึ่งยังไม่ใช่ workspace package ที่ build ได้ใน Repository นี้ |
 
-## 2. ไฟล์ทั้งหมดและหน้าที่
+## 3. การตั้งค่าและใช้งาน CLI
 
-| ไฟล์ | ตำแหน่ง | หน้าที่ |
-|------|---------|--------|
-| `kilo.json` | Root ของ repo | คอนฟิกหลัก: โมเดลเริ่มต้น, เกตเวย์, routing, รายชื่อโมเดลฟรี |
-| `.kilo/models-catalog.json` | `.kilo/` | คาตาล็อกโมเดล 349 รายการจาก 60 provider (ดึงจาก `https://api.kilo.ai/api/gateway/models`) |
-| `dev/local/cli-chat.ts` | `dev/local/` | สクリปต์แชท CLI แบบโต้ตอบ อ่านคอนฟิกจาก `kilo.json` แล้วส่งข้อความไปยังเกตเวย์ |
-| `.env.local` | Root ของ repo | ตัวแปรสภาพแวดล้อมสำหรับการพัฒนาในเครื่อง (placeholder values) |
-| `package.json` | Root ของ repo | เพิ่ม script `chat:cli` できますเรียกใช้ `dev/local/cli-chat.ts` |
-
----
-
-## 3. คอนฟิกหลัก (kilo.json)
-
-```json
-{
-  "$schema": "https://app.kilo.ai/config.json",
-  "snapshot": false,
-  "model": "kilo-auto/free",
-  "models": {
-    "catalog_path": ".kilo/models-catalog.json",
-    "default": "kilo-auto/free",
-    "free_tier": "kilo-auto/free",
-    "routing": {
-      "balanced": "kilo-auto/balanced",
-      "efficient": "kilo-auto/efficient",
-      "free": "kilo-auto/free",
-      "frontier": "kilo-auto/frontier"
-    },
-    "free_models": [
-      "kilo-auto/free",
-      "poolside/laguna-s-2.1:free",
-      "stepfun/step-3.7-flash:free",
-      "tencent/hy3:free",
-      "inclusionai/ling-3.0-tiny:free",
-      "poolside/laguna-xs-2.1:free",
-      "nvidia/nemotron-3.5-content-safety:free",
-      "nvidia/nemotron-3-ultra-550b-a55b:free",
-      "cohere/north-mini-code:free"
-    ],
-    "available_now": {
-      "premium": [...],
-      "free": [...]
-    }
-  },
-  "gateway": {
-    "url": "https://api.kilo.ai/api/gateway",
-    "auto_select": true
-  }
-}
-```
-
-หมายเหตุเกี่ยวกับ schema validation:
-- `model` (top-level) — โมเดลเริ่มต้นที่ใช้เมื่อไม่มีการระบุผ่าน CLI argument อ่านโดย `cli-chat.ts` ผ่าน `getDefaultModel()`
-- `models` — รายละเอียดโมเดล: catalog path, default, free_tier, routing, free_models, available_now
-- `gateway` — การตั้งค่าเกตเวย์: URL และ auto_select
-- ถ้า schema validator แจ้ง "Unrecognized keys: models, gateway" ให้ละเว้นได้ เนื่องจาก `cli-chat.ts` อ่านค่าเหล่านี้โดยตรงจากไฟล์ ไม่ผ่าน schema validation
-
----
-
-## 4. คาตาล็อกโมเดล (.kilo/models-catalog.json)
-
-- ขนาด: 4,839 bytes (178 บรรทัด)
-- โมเดลทั้งหมด: 349 รายการ
-- Provider ทั้งหมด: 60 รายการ
-- โมเดลฟรี 9 รายการ รวมถึง `kilo-auto/free`
-- auto_routing: balanced, efficient, free
-- default_models: frontier, balanced, efficient, free
-
----
-
-## 5. CLI Chat Script (dev/local/cli-chat.ts)
-
-### วิธีการใช้งาน
+ใช้ Node.js ตามข้อกำหนดใน root `package.json` และติดตั้ง dependencies ของ Repository ก่อน
 
 ```bash
-# รันด้วยโมเดลเริ่มต้น (kilo-auto/free)
-bun dev/local/cli-chat.ts
-
-# รันด้วยโมเดลที่ระบุ
-bun dev/local/cli-chat.ts kilo-auto/free
-
-# รันผ่าน pnpm script
+pnpm install --frozen-lockfile
 pnpm chat:cli
 ```
 
-### คุณสมบัติ
+กำหนด API key ใน environment ของ Shell หรือ Secret Manager ก่อนใช้โมเดลที่ต้องยืนยันตัวตน:
 
-- อ่านคอนฟิกจาก `kilo.json` (มี fallback ค่าเริ่มต้นถ้าไฟล์ไม่พบ)
-- รองรับคำสั่งพิเศษ: `exit`/`quit`, `clear`, `model <id>`
-- ส่งข้อความไปยังเกตเวย์ผ่าน `fetch` (ไม่ใช้ API key ฝังโค้ด)
-- แสดงข้อความต้อนรับและคำแนะนำเป็นภาษาไทย
-
-### การทดสอบ (ทดสอบแล้ว ผลสำเร็จ)
-
-```
-$ echo -e "สวัสดี\nexit" | bun dev/local/cli-chat.ts kilo-auto/free
-=== Kilo CLI Chat ===
-โมเดล: kilo-auto/free
-...
-> สวัสดีครับ/ค่ะ 👋
-...
-> EXIT_CODE: 0
+```bash
+export KILO_API_KEY="ใส่คีย์ของคุณในเครื่องเท่านั้น"
+pnpm chat:cli
 ```
 
-**หมายเหตุ:** ไม่มี hard-code API key หรือ secret ในสクリปต์นี้ อ่านค่าทั้งหมดจาก `kilo.json`
+ห้าม commit API key ลง Git, ห้ามใส่ใน `kilo.json`, source code, issue หรือ Pull Request
 
----
+คำสั่งภายใน CLI:
 
-## 6. ตัวแปรสภาพแวดล้อม (.env-local)
+- `model <id>` — เปลี่ยน Model ID สำหรับข้อความถัดไป
+- `clear` — ล้างประวัติสนทนาในหน่วยความจำของ CLI
+- `exit` หรือ `quit` — จบเซสชัน
 
-สร้างจาก `.env.local.example` โดยใช้ค่า placeholder สำหรับการพัฒนา:
+CLI นี้เป็น text-chat helper แบบ OpenAI-compatible ไม่ใช่ Agent เต็มรูปแบบ: ยังไม่มี tool calling, streaming, persistent conversation storage หรือการเรียกใช้เครื่องมือใน Repository
 
+## 4. Gateway และ Authentication
+
+Gateway API ที่เอกสารทางการระบุ:
+
+- Base URL: `https://ai-gateway.kilo.ai/api/v1`
+- Chat: `POST /chat/completions`
+- Models: `GET /models`
+- Providers: `GET /providers`
+
+การเรียกโมเดลที่ต้องยืนยันตัวตนใช้ `Authorization: Bearer $KILO_API_KEY` ส่วน anonymous access จำกัดเฉพาะ Free Models และมี rate limit ตาม IP
+
+แหล่งอ้างอิง:
+- https://kilo.ai/docs/gateway/api-reference
+- https://kilo.ai/docs/gateway/authentication
+- https://kilo.ai/docs/gateway/models-and-providers
+
+## 5. ข้อควรระวังเรื่อง Free Models
+
+Free ไม่ได้แปลว่าเหมาะกับข้อมูลลับหรือข้อมูลลูกค้าเสมอไป เอกสาร Kilo ระบุว่า Free Models อาจถูกจำกัดอัตราการใช้งาน และ Auto Free อาจ route ไปยัง Provider ที่บันทึก Prompt/Output หรือใช้ข้อมูลเพื่อปรับปรุงบริการได้
+
+- ห้ามส่ง Password, API key, Source Code ที่เป็นความลับ, ข้อมูลลูกค้า หรือข้อมูลส่วนบุคคลที่ไม่จำเป็น
+- ตรวจสอบเงื่อนไขการเก็บข้อมูลของ Provider ปลายทางก่อนใช้งาน
+- ตรวจสอบราคาและสถานะโมเดลก่อนเลือกโมเดลแบบเสียค่าใช้จ่าย
+
+## 6. Model Catalog: ข้อจำกัดและการ Refresh
+
+ไฟล์ `.kilo/models-catalog.json` เดิมระบุจำนวนรวม 349 โมเดลจาก 60 Provider แต่ในไฟล์มีเพียง aggregate provider counts, routing tiers และ curated model IDs ไม่ได้ฝังข้อมูลรายละเอียดครบ 349 โมเดล
+
+Timestamp เดิมคือ `2026-08-08T15:04:40.667410Z` จึงไม่ควรถือว่าเป็นรายการปัจจุบัน
+
+Refresh จาก Gateway ได้ด้วย:
+
+```bash
+pnpm catalog:refresh
 ```
-NODE_ENV=development
-NEXTAUTH_SECRET=dev-placeholder-secret-change-in-production
-NEXTAUTH_URL=http://localhost:3000
-POSTGRES_URL=postgresql://postgres:postgres@localhost:5432/postgres
-OPENROUTER_API_KEY=sk-or-v1-your-openrouter-key
-```
 
----
+สคริปต์จะดึง `GET https://ai-gateway.kilo.ai/api/v1/models` และบันทึก full model records พร้อมเวลา Refresh ลง `.kilo/models-catalog.json` โดยจะเก็บ curated lists เดิมไว้และรายงาน ID ที่ไม่พบในรายการสด ไม่ควรนำ curated lists ไปใช้เป็นหลักฐานราคา/Availability โดยไม่ตรวจสอบอีกครั้ง
 
-## 7. งานที่ยังค้างอยู่ (ต่อจาก Grok checklist)
+## 7. สถานะ Kilo VS Code Extension
 
-| งาน | สถานะ | หมายเหตุ |
-|-----|--------|---------|
-| ตรวจ Codex review comments ใน PR #1 | ⚠️ | ไม่พบ PR #1 ของ mickmix258-gif/cloudkilo (อยู่ GitHub ของบุคคลอื่น) ตรวจ code เองแทน |
-| ตรวจ CLI script ว่ามี hard-code secret หรือไม่ | ✅ | ไม่มี — อ่านจาก kilo.json เท่านั้น |
-| ตรวจขนาด models-catalog.json | ✅ | 4,839 bytes — ไม่ใหญ่เกินไป |
-| ทดสอบ CLI ด้วย free model | ✅ | ผ่าน — kilo-auto/free ตอบกลับเป็นภาษาไทย |
-| รวม config / catalog / CLI ให้อยู่ในที่เดียว | ✅ | เอกสารนี้ |
-| ค่า default (free model + gateway) ใช้งานได้ทันที | ✅ | kilo.json กำหนด default และ gateway แล้ว |
-| แก้ไขการนำทางลิงก์การตั้งค่า autocomplete (Issue #6284) | ✅ | Settings.tsx onTabChange ส่ง navigate message view: "settings" |
-| เพิ่ม back button ให้ ProfileView.tsx | ✅ | handleBack() post navigate/view: "newTask" + ปุ่ม arrow-left ใน header |
-| ตรวจว่าไม่มี secret หลุดในโค้ด | ✅ | cli-chat.ts, kilo.json, models-catalog.json ไม่มี hard-code secret |
+`packages/kilo-vscode/` มี source snapshot ขนาดใหญ่จาก Kilo Code แต่ manifest อ้างอิง Workspace Packages จาก upstream ที่ไม่มีอยู่ใน Repository นี้ เช่น SDK, core และ UI packages ที่ Codex ระบุ
 
----
+เพื่อป้องกันไม่ให้ `pnpm install --frozen-lockfile` ของ CloudKilo ล้มเหลว จึง exclude `packages/kilo-vscode` จาก root pnpm workspace ชั่วคราว
 
-## 8. หมายเหตุเกี่ยวกับสภาพแวดล้อม
+ผลที่ตามมา:
+- Source files ยังอยู่ใน Git และตรวจสอบได้
+- ไม่ได้ลบหรือทำลาย source snapshot
+- ห้ามอ้างว่า Extension build ได้จาก CloudKilo checkout ปัจจุบัน
+- ก่อนเปิดใช้งาน ต้องนำ dependency graph ที่ตรงกับ upstream version เข้ามาให้ครบ, regenerate lockfile และทดสอบ VS Code Extension Host
 
-- Sandbox นี้ไม่มี VS Code ไม่สามารถทดสอบ extension แบบเต็มรูปแบบได้
-- ไม่มี network constraint สำหรับการทดสอบ CLI (ทดสอบแล้วสำเร็จ)
-- pnpm catalog มีปัญหา (`@pierre/diffs` not found) ใช้ `bun` รัน CLI แทน
+## 8. การตรวจสอบที่ต้องทำ
+
+| รายการ | สถานะ |
+|---|---|
+| CLI request timeout | แก้ใน source |
+| CLI serial input / multi-line stdin | แก้ใน source |
+| CLI graceful EOF / shutdown | แก้ใน source |
+| CLI history consistency on failed request | แก้ใน source |
+| Optional Bearer authentication via `KILO_API_KEY` | แก้ใน source |
+| CLI core unit tests | เพิ่มแล้ว; ต้องรันใน CI |
+| Exclude incomplete Extension from pnpm workspace | แก้ใน source |
+| Live model catalog refresh script | เพิ่มแล้ว; ต้องรันใน environment ที่เข้าถึง Gateway ได้ |
+| Clean install with frozen lockfile | รอ CI ยืนยัน |
+| Full repository tests and lint | รอ CI ยืนยัน |
+| VS Code Extension build and manual tests | ยังไม่พร้อมจนกว่าจะเติม upstream dependencies |
+
+ห้ามถือว่า Build, Tests หรือ CI ผ่านจนกว่าจะมีผลลัพธ์จริงจาก GitHub Actions หรือการรันทดสอบในเครื่อง

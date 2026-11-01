@@ -1,170 +1,120 @@
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { createInterface } from 'node:readline';
-
-interface KiloConfig {
-  model?: string;
-  models?: {
-    default?: string;
-    free_tier?: string;
-    routing?: Record<string, string>;
-    free_models?: string[];
-  };
-  gateway?: {
-    url?: string;
-    auto_select?: boolean;
-  };
-}
-
-interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-}
+import {
+  getDefaultModel,
+  getGatewayUrl,
+  sendChat,
+  type ChatMessage,
+  type KiloConfig,
+} from './cli-chat-core';
 
 function loadConfig(): KiloConfig {
+  const configPath = resolve(process.cwd(), 'kilo.json');
   try {
-    const raw = readFileSync('kilo.json', 'utf8');
-    return JSON.parse(raw);
-  } catch {
-    return {
-      model: 'kilo-auto/free',
-      models: {
-        default: 'kilo-auto/free',
-        free_tier: 'kilo-auto/free',
-        routing: {
-          balanced: 'kilo-auto/balanced',
-          efficient: 'kilo-auto/efficient',
-          free: 'kilo-auto/free',
-          frontier: 'kilo-auto/frontier',
-        },
-      },
-      gateway: { url: 'https://api.kilo.ai/api/gateway', auto_select: true },
-    };
-  }
-}
-
-function getDefaultModel(config: KiloConfig): string {
-  // อ่านจาก top-level `model` ก่อน แล้วค่อย fallback ไปยัง `models.default`
-  return config.model ?? config.models?.default ?? 'kilo-auto/free';
-}
-
-function getGatewayUrl(config: KiloConfig): string {
-  return config.gateway?.url ?? 'https://api.kilo.ai/api/gateway';
-}
-
-async function sendChat(
-  gatewayUrl: string,
-  model: string,
-  messages: ChatMessage[]
-): Promise<string> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-  try {
-    const response = await fetch(`${gatewayUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        stream: false,
-      }),
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Kilo API error (${response.status}): ${errorText}`);
+    const raw = readFileSync(configPath, 'utf8');
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error('kilo.json must contain a JSON object.');
     }
-
-    const data = await response.json();
-    return data.choices?.[0]?.message?.content ?? 'ไม่มีคำตอบกลับมา';
+    return parsed as KiloConfig;
   } catch (error) {
-    if (error instanceof DOMException && error.name === 'AbortError') {
-      throw new Error('หมดเวลารอคำตอบจาก gateway (เกิน 30 วินาที) โปรดลองใหม่อีกครั้ง');
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return {};
     }
-    throw error;
-  } finally {
-    clearTimeout(timeoutId);
+    throw new Error(
+      `Unable to read ${configPath}: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 
-async function main() {
+async function main(): Promise<void> {
   const config = loadConfig();
-  const defaultModel = getDefaultModel(config);
   const gatewayUrl = getGatewayUrl(config);
-  const modelArg = process.argv[2];
-  const model = modelArg ?? defaultModel;
-
+  let currentModel = process.argv[2]?.trim() || getDefaultModel(config);
+  const apiKey = process.env.KILO_API_KEY;
   const messages: ChatMessage[] = [];
+  const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY);
 
   const rl = createInterface({
     input: process.stdin,
     output: process.stdout,
-    prompt: '> ',
+    terminal: interactive,
   });
+  rl.setPrompt('> ');
 
-  console.log(`=== Kilo CLI Chat ===\nโมเดล: ${model}\nพิมพ์ 'exit' หรือ 'quit' เพื่อออก\nพิมพ์ 'model <id>' เพื่อเปลี่ยนโมเดล\nพิมพ์ 'clear' เพื่อล้างประวัติ\n`);
+  console.log(
+    [
+      '=== Kilo CLI Chat ===',
+      `โมเดล: ${currentModel}`,
+      "พิมพ์ 'exit' หรือ 'quit' เพื่อออก",
+      "พิมพ์ 'model <id>' เพื่อเปลี่ยนโมเดล",
+      "พิมพ์ 'clear' เพื่อล้างประวัติ",
+      apiKey ? 'พบ KILO_API_KEY แล้ว' : 'ยังไม่มี KILO_API_KEY: ใช้งานได้เฉพาะโมเดลที่อนุญาตแบบไม่ยืนยันตัวตน',
+      '',
+    ].join('\n')
+  );
 
-  let currentModel = model;
+  if (interactive) rl.prompt();
 
-  rl.on('line', (line) => {
-    const input = line.trim();
+  try {
+    // Async iteration processes each input line in order and naturally waits
+    // for each request before accepting the next command.
+    for await (const rawLine of rl) {
+      const input = rawLine.trim();
 
-    if (!input) {
-      rl.prompt();
-      return;
-    }
+      if (!input) {
+        if (interactive) rl.prompt();
+        continue;
+      }
 
-    if (input === 'exit' || input === 'quit') {
-      console.log('ลากันครับ');
-      rl.close();
-      return;
-    }
+      if (input === 'exit' || input === 'quit') {
+        console.log('ลากันครับ');
+        break;
+      }
 
-    if (input === 'clear') {
-      messages.length = 0;
-      console.log('ล้างประวัติแล้ว\n');
-      rl.prompt();
-      return;
-    }
+      if (input === 'clear') {
+        messages.length = 0;
+        console.log('ล้างประวัติแล้ว\n');
+        if (interactive) rl.prompt();
+        continue;
+      }
 
-    const modelMatch = input.match(/^model\s+(.+)$/i);
-    if (modelMatch) {
-      currentModel = modelMatch[1].trim();
-      console.log(`เปลี่ยนโมเดลเป็น: ${currentModel}\n`);
-      rl.prompt();
-      return;
-    }
+      const modelMatch = input.match(/^model\s+(.+)$/i);
+      if (modelMatch) {
+        currentModel = modelMatch[1].trim();
+        console.log(`เปลี่ยนโมเดลเป็น: ${currentModel}\n`);
+        if (interactive) rl.prompt();
+        continue;
+      }
 
-    // ส่งข้อความ — push เข้า history เฉพาะเมื่อส่งสำเร็จเท่านั้น
-    (async () => {
       try {
-        const reply = await sendChat(gatewayUrl, currentModel, [
-          ...messages,
-          { role: 'user', content: input },
-        ]);
-        console.log(`\n${reply}\n`);
-        // Push ลง history หลังจาก sendChat สำเร็จแล้วเท่านั้น
+        const reply = await sendChat(
+          gatewayUrl,
+          currentModel,
+          [...messages, { role: 'user', content: input }],
+          { apiKey }
+        );
         messages.push({ role: 'user', content: input });
         messages.push({ role: 'assistant', content: reply });
+        console.log(`\n${reply}\n`);
       } catch (error) {
-        console.error(`\nผิดพลาด: ${error instanceof Error ? error.message : String(error)}\n`);
+        console.error(
+          `\nผิดพลาด: ${error instanceof Error ? error.message : String(error)}\n`
+        );
       }
-      rl.prompt();
-    })();
-  });
 
-  rl.on('close', () => {
+      if (interactive) rl.prompt();
+    }
+  } finally {
+    rl.close();
     console.log('จบเซสชันแล้ว');
-    process.exit(0);
-  });
-
-  rl.prompt();
+  }
 }
 
 main().catch(error => {
-  console.error(`ผิดพลาดร้ายแรง: ${error instanceof Error ? error.message : String(error)}`);
-  process.exit(1);
+  console.error(
+    `ผิดพลาดร้ายแรง: ${error instanceof Error ? error.message : String(error)}`
+  );
+  process.exitCode = 1;
 });
