@@ -42,6 +42,13 @@ async function main(): Promise<void> {
     terminal: interactive,
   });
   rl.setPrompt('> ');
+  let inputClosed = false;
+  rl.on('close', () => {
+    inputClosed = true;
+  });
+  const showPrompt = (): void => {
+    if (interactive && !inputClosed) rl.prompt();
+  };
 
   console.log(
     [
@@ -55,7 +62,7 @@ async function main(): Promise<void> {
     ].join('\n')
   );
 
-  if (interactive) rl.prompt();
+  showPrompt();
 
   try {
     // Async iteration processes each input line in order and naturally waits
@@ -64,7 +71,7 @@ async function main(): Promise<void> {
       const input = rawLine.trim();
 
       if (!input) {
-        if (interactive) rl.prompt();
+        showPrompt();
         continue;
       }
 
@@ -76,7 +83,7 @@ async function main(): Promise<void> {
       if (input === 'clear') {
         messages.length = 0;
         console.log('ล้างประวัติแล้ว\n');
-        if (interactive) rl.prompt();
+        showPrompt();
         continue;
       }
 
@@ -84,7 +91,7 @@ async function main(): Promise<void> {
       if (modelMatch) {
         currentModel = modelMatch[1].trim();
         console.log(`เปลี่ยนโมเดลเป็น: ${currentModel}\n`);
-        if (interactive) rl.prompt();
+        showPrompt();
         continue;
       }
 
@@ -104,7 +111,7 @@ async function main(): Promise<void> {
         );
       }
 
-      if (interactive) rl.prompt();
+      showPrompt();
     }
   } finally {
     rl.close();

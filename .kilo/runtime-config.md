@@ -62,7 +62,7 @@ Gateway API ที่เอกสารทางการระบุ:
 - Models: `GET /models`
 - Providers: `GET /providers`
 
-การเรียกโมเดลที่ต้องยืนยันตัวตนใช้ `Authorization: Bearer $KILO_API_KEY` ส่วน anonymous access จำกัดเฉพาะ Free Models และมี rate limit ตาม IP
+การเรียกโมเดลที่ต้องยืนยันตัวตนใช้ `Authorization: Bearer $KILO_API_KEY` ส่วน anonymous access จำกัดเฉพาะ Free Models และมี rate limit 200 requests/hour/IP
 
 แหล่งอ้างอิง:
 - https://kilo.ai/docs/gateway/api-reference

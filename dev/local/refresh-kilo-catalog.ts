@@ -14,6 +14,26 @@ interface ModelsResponse {
   data?: unknown;
 }
 
+interface CatalogFile {
+  generated_at_utc?: string;
+  source?: Record<string, unknown>;
+  catalog_summary?: {
+    model_count?: number;
+    provider_count?: number;
+    providers?: Record<string, number>;
+    [key: string]: unknown;
+  };
+  free_models?: string[];
+  available_models?: {
+    free?: string[];
+    premium?: string[];
+    auto_routers?: string[];
+    [key: string]: unknown;
+  };
+  default_models?: Record<string, string>;
+  [key: string]: unknown;
+}
+
 async function main(): Promise<void> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -33,22 +53,28 @@ async function main(): Promise<void> {
       throw new Error('Models endpoint response does not contain a data array.');
     }
 
-    models = payload.data.filter(
-      (model): model is GatewayModel =>
-        Boolean(model) &&
-        typeof model === 'object' &&
-        typeof (model as GatewayModel).id === 'string' &&
-        (model as GatewayModel).id.length > 0
-    );
-
-    if (models.length === 0 || models.length !== payload.data.length) {
-      throw new Error('Models endpoint returned an empty list or records with invalid IDs.');
+    const records: GatewayModel[] = [];
+    for (const candidate of payload.data as unknown[]) {
+      if (
+        !candidate ||
+        typeof candidate !== 'object' ||
+        typeof (candidate as Record<string, unknown>).id !== 'string' ||
+        !(candidate as Record<string, unknown>).id
+      ) {
+        throw new Error('Models endpoint returned a record with an invalid model ID.');
+      }
+      records.push(candidate as GatewayModel);
     }
 
-    const ids = models.map(model => model.id);
+    if (records.length === 0) {
+      throw new Error('Models endpoint returned an empty model list.');
+    }
+
+    const ids = records.map(model => model.id);
     if (new Set(ids).size !== ids.length) {
       throw new Error('Models endpoint returned duplicate model IDs; refusing to overwrite the catalog.');
     }
+    models = records;
   } catch (error) {
     if (controller.signal.aborted) {
       throw new Error(`Models endpoint timed out after ${REQUEST_TIMEOUT_MS} ms.`);
@@ -59,7 +85,7 @@ async function main(): Promise<void> {
   }
 
   const catalogPath = resolve(process.cwd(), '.kilo/models-catalog.json');
-  const catalog = JSON.parse(readFileSync(catalogPath, 'utf8')) as Record<string, any>;
+  const catalog = JSON.parse(readFileSync(catalogPath, 'utf8')) as CatalogFile;
   const providerCounts: Record<string, number> = {};
 
   for (const model of models) {
@@ -69,13 +95,11 @@ async function main(): Promise<void> {
 
   const modelIds = new Set(models.map(model => model.id));
   const curatedIds = new Set<string>([
-    ...(Array.isArray(catalog.free_models) ? catalog.free_models : []),
-    ...(Array.isArray(catalog.available_models?.free) ? catalog.available_models.free : []),
-    ...(Array.isArray(catalog.available_models?.premium) ? catalog.available_models.premium : []),
-    ...(Array.isArray(catalog.available_models?.auto_routers) ? catalog.available_models.auto_routers : []),
-    ...Object.values(catalog.default_models ?? {}).filter(
-      (value): value is string => typeof value === 'string'
-    ),
+    ...(catalog.free_models ?? []),
+    ...(catalog.available_models?.free ?? []),
+    ...(catalog.available_models?.premium ?? []),
+    ...(catalog.available_models?.auto_routers ?? []),
+    ...Object.values(catalog.default_models ?? {}),
   ]);
   const missingCuratedIds = [...curatedIds].filter(id => !modelIds.has(id)).sort();
 
